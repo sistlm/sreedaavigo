@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SreedaarviGo - Admin Login</title>
+  <style>
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      background: linear-gradient(to bottom right, #2ecc71, #3498db);
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0;
+    }
+    .login-box {
+      background: white;
+      padding: 40px 30px;
+      border-radius: 12px;
+      box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+      text-align: center;
+      width: 100%;
+      max-width: 360px;
+    }
+    .login-box h2 {
+      color: #2c3e50;
+      margin-bottom: 20px;
+    }
+    .login-box img {
+      width: 80px;
+      margin-bottom: 15px;
+    }
+    input {
+      width: 100%;
+      padding: 12px;
+      margin: 10px 0;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      font-size: 16px;
+    }
+    button {
+      width: 100%;
+      padding: 12px;
+      background: #2c3e50;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      margin-top: 10px;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #1f2d3a;
+    }
+    .error {
+      color: red;
+      margin-top: 10px;
+      font-size: 0.9em;
+    }
+    .toggle-box {
+      text-align: left;
+      margin-top: -5px;
+      font-size: 0.9em;
+    }
+    .forgot-link {
+      margin-top: 10px;
+      font-size: 0.9em;
+    }
+    .forgot-link a {
+      color: #2980b9;
+      text-decoration: none;
+    }
+    .forgot-link a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="login-box">
+    <img src="https://cdn-icons-png.flaticon.com/512/684/684908.png" alt="Admin Icon">
+    <h2>Admin Login</h2>
+    <input type="text" id="username" placeholder="Username" />
+    <input type="password" id="password" placeholder="Password" />
+    <div class="toggle-box">
+      <input type="checkbox" onclick="togglePassword()"> Show Password
+    </div>
+    <button onclick="login()">Login</button>
+    <div class="forgot-link">
+      <a href="#" onclick="forgotPassword()">Forgot Password?</a>
+    </div>
+    <div class="error" id="error"></div>
+  </div>
+
+  <script>
+    const ADMIN_USERNAME = "admin@sreedaarvigo.com";
+    const ADMIN_PASSWORD = "GoSecure2025!";
+
+    function login() {
+      const username = document.getElementById("username").value.trim();
+      const password = document.getElementById("password").value;
+
+      if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
+        localStorage.setItem("adminLoggedIn", "true");
+        window.location.href = "admin-dashboard.html";
+      } else {
+        document.getElementById("error").innerText = "Invalid username or password.";
+      }
+    }
+
+    function togglePassword() {
+      const pwd = document.getElementById("password");
+      pwd.type = pwd.type === "password" ? "text" : "password";
+    }
+
+    function forgotPassword() {
+      alert("Password recovery is not yet set up. Please contact system admin.");
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SreedaarviGo - Book Your Ride</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <style>
+    body { font-family: Arial; padding: 20px; background: #f5f5f5; }
+    input, select, button { margin: 5px; padding: 10px; }
+    #map { height: 400px; margin-top: 10px; }
+    #fareOutput { margin-top: 15px; font-weight: bold; }
+    #history ul { padding-left: 20px; }
+  </style>
+</head>
+<body>
+
+  <h2>SreedaarviGo - Book Your Ride</h2>
+
+  <input id="pickup" type="text" placeholder="Enter pickup location" size="40" />
+  <input id="drop" type="text" placeholder="Enter drop location" size="40" />
+
+  <select id="vehicleType">
+    <option value="Bike">Bike</option>
+    <option value="Auto">Auto</option>
+    <option value="Car">Car</option>
+  </select>
+
+  <select id="plateType">
+    <option value="Yellow">Yellow Plate</option>
+    <option value="Green">Green Plate</option>
+    <option value="White">White Plate</option>
+  </select>
+
+  <button onclick="handleBooking()">Book Ride</button>
+
+  <div id="map"></div>
+
+  <div id="fareOutput"></div>
+
+  <div id="paymentSection" style="margin-top:10px; display:none;">
+    <button onclick="initiatePayment()">Pay Now</button>
+  </div>
+
+  <div id="history"></div>
+
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.min.js"></script>
+  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+  <script>
+    let map = L.map('map').setView([20.5937, 78.9629], 5);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+
+    let control = null;
+
+    async function geocode(place) {
+      const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(place)}`;
+      const res = await fetch(url);
+      const data = await res.json();
+      return data.length ? [parseFloat(data[0].lat), parseFloat(data[0].lon)] : null;
+    }
+
+    async function handleBooking() {
+      const pickup = document.getElementById("pickup").value;
+      const drop = document.getElementById("drop").value;
+      const vehicle = document.getElementById("vehicleType").value;
+      const plate = document.getElementById("plateType").value;
+
+      if (!pickup || !drop) return alert("Please enter both locations.");
+      if (plate === "White" && vehicle !== "Bike") return alert("White plates only allowed for bikes.");
+
+      const from = await geocode(pickup);
+      const to = await geocode(drop);
+      if (!from || !to) return alert("Invalid pickup or drop location.");
+
+      if (control) control.remove();
+      map.setView(from, 13);
+
+      const iconUrl = vehicle === 'Bike'
+        ? 'https://cdn-icons-png.flaticon.com/512/168/168882.png'
+        : vehicle === 'Auto'
+        ? 'https://cdn-icons-png.flaticon.com/512/2967/2967429.png'
+        : 'https://cdn-icons-png.flaticon.com/512/743/743922.png';
+
+      const vehicleIcon = L.icon({ iconUrl, iconSize: [32, 32], iconAnchor: [16, 32] });
+
+      L.marker(from, { icon: vehicleIcon }).addTo(map);
+      L.marker(to).addTo(map);
+
+      control = L.Routing.control({
+        waypoints: [L.latLng(...from), L.latLng(...to)],
+        routeWhileDragging: false
+      }).addTo(map);
+
+      control.on('routesfound', function (e) {
+        const route = e.routes[0];
+        const distance = route.summary.totalDistance / 1000;
+        const time = route.summary.totalTime / 60; // in minutes
+        const fare = calculateFare(distance, vehicle);
+
+        document.getElementById("fareOutput").innerText =
+          `Distance: ${distance.toFixed(2)} km | Time: ${time.toFixed(0)} mins | Fare: ₹${fare}`;
+
+        saveRide({ pickup, drop, vehicle, plate, fare });
+        document.getElementById("paymentSection").style.display = "block";
+        window.lastFareAmount = fare;
+      });
+    }
+
+    function calculateFare(distance, vehicle) {
+      let base = 0, rate = 0;
+      if (vehicle === 'Bike') { base = 20; rate = 7; }
+      else if (vehicle === 'Auto') { base = 25; rate = 9; }
+      else if (vehicle === 'Car') { base = 35; rate = 12; }
+      let fare = base + distance * rate;
+      if (new Date().getHours() >= 22 || new Date().getHours() < 5) fare *= 1.25;
+      return fare.toFixed(2);
+    }
+
+    function initiatePayment() {
+      const options = {
+        key: "rzp_test_YourKeyHere", // 🔁 Replace with real test key
+        amount: window.lastFareAmount * 100,
+        currency: "INR",
+        name: "SreedaarviGo",
+        description: "Ride Fare Payment",
+        handler: function (response) {
+          alert("✅ Payment Success!\nPayment ID: " + response.razorpay_payment_id);
+        },
+        prefill: {
+          name: "Test User",
+          email: "test@example.com",
+          contact: "9999999999"
+        }
+      };
+      const rzp = new Razorpay(options);
+      rzp.open();
+    }
+
+    function saveRide(ride) {
+      const history = JSON.parse(localStorage.getItem("rides") || "[]");
+      history.push({ ...ride, time: new Date().toLocaleString() });
+      localStorage.setItem("rides", JSON.stringify(history));
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SreedaarviGo - Ride Booking</title>
+  <style>
+    #map {
+      height: 400px;
+      width: 100%;
+    }
+    .form-section {
+      margin-top: 1rem;
+    }
+    .fare-box {
+      margin-top: 1rem;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <h2>SreedaarviGo - Book Your Ride</h2>
+
+  <div>
+    <input id="pickup" type="text" placeholder="Enter pickup location" />
+    <input id="drop" type="text" placeholder="Enter drop location" />
+
+    <select id="vehicleType">
+      <option value="Bike">Bike</option>
+      <option value="Auto">Auto</option>
+      <option value="Car">Car</option>
+    </select>
+
+    <select id="plateType">
+      <option value="Yellow">Yellow Plate</option>
+      <option value="Green">Green Plate</option>
+      <option value="White">White Plate</option>
+    </select>
+
+    <button onclick="calculateRoute()">Book Ride</button>
+  </div>
+
+  <div id="map"></div>
+
+  <div class="fare-box" id="fareOutput"></div>
+  <div class="fare-box" id="history"></div>
+
+  <script>
+    let map, directionsService, directionsRenderer;
+
+    function initMap() {
+      map = new google.maps.Map(document.getElementById("map"), {
+        center: { lat: 28.6139, lng: 77.2090 }, // Delhi
+        zoom: 12,
+      });
+
+      directionsService = new google.maps.DirectionsService();
+      directionsRenderer = new google.maps.DirectionsRenderer();
+      directionsRenderer.setMap(map);
+
+      const pickupInput = document.getElementById("pickup");
+      const dropInput = document.getElementById("drop");
+
+      new google.maps.places.Autocomplete(pickupInput);
+      new google.maps.places.Autocomplete(dropInput);
+
+      loadHistory();
+    }
+
+    function calculateRoute() {
+      const pickup = document.getElementById("pickup").value;
+      const drop = document.getElementById("drop").value;
+      const vehicleType = document.getElementById("vehicleType").value;
+      const plateType = document.getElementById("plateType").value;
+
+      if (!pickup || !drop) {
+        alert("Please enter both pickup and drop locations.");
+        return;
+      }
+
+      if (plateType === "White" && vehicleType !== "Bike") {
+        alert("White plates are allowed only for bikes.");
+        return;
+      }
+
+      directionsService.route({
+        origin: pickup,
+        destination: drop,
+        travelMode: google.maps.TravelMode.DRIVING,
+      }, (response, status) => {
+        if (status === "OK") {
+          directionsRenderer.setDirections(response);
+          const distanceInMeters = response.routes[0].legs[0].distance.value;
+          const distanceKm = distanceInMeters / 1000;
+
+          const fare = calculateFare(distanceKm, vehicleType);
+          document.getElementById("fareOutput").innerText = `Fare: ₹${fare}`;
+
+          saveRide({ pickup, drop, vehicleType, plateType, fare });
+        } else {
+          alert("Directions request failed: " + status);
+        }
+      });
+    }
+
+    function calculateFare(distanceKm, vehicleType) {
+      let baseFare = 0;
+      let perKmRate = 0;
+
+      const hour = new Date().getHours();
+      const isNight = hour >= 22 || hour < 5;
+      const nightRate = 0.25;
+
+      switch (vehicleType) {
+        case 'Bike':
+          baseFare = 20;
+          perKmRate = 7;
+          break;
+        case 'Auto':
+          baseFare = 25;
+          perKmRate = 9;
+          break;
+        case 'Car':
+          baseFare = 35;
+          perKmRate = 12;
+          break;
+      }
+
+      let fare = baseFare + (distanceKm * perKmRate);
+      if (isNight) fare += fare * nightRate;
+      return fare.toFixed(2);
+    }
+
+    function saveRide(ride) {
+      const history = JSON.parse(localStorage.getItem("rides") || "[]");
+      history.push({ ...ride, time: new Date().toLocaleString() });
+      localStorage.setItem("rides", JSON.stringify(history));
+      loadHistory();
+    }
+
+    function loadHistory() {
+      const history = JSON.parse(localStorage.getItem("rides") || "[]");
+      const list = history.map(r =>
+        `<li>${r.time}: ${r.pickup} → ${r.drop} (${r.vehicleType}, ${r.plateType}) - ₹${r.fare}</li>`
+      ).join("");
+      document.getElementById("history").innerHTML = `<ul>${list}</ul>`;
+    }
+  </script>
+
+  <!-- Replace YOUR_API_KEY with your actual API Key -->
+  <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&libraries=places&callback=initMap" async defer></script>
+</body>
+</html>

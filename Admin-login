@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Admin Login</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div class="login-box">
+    <h2>Admin Login</h2>
+    <input id="username" type="text" placeholder="Username" />
+    <input id="password" type="password" placeholder="Password" />
+    <button onclick="login()">Login</button>
+    <a href="forgot-password.html">Forgot Password?</a>
+    <div id="error" class="error"></div>
+  </div>
+
+  <script>
+    const ADMIN_USER = "admin@sreedaarvigo.com";
+    const ADMIN_PASS = "GoSecure2025!";
+
+    function login() {
+      const user = document.getElementById("username").value.trim();
+      const pass = document.getElementById("password").value;
+      if (user === ADMIN_USER && pass === ADMIN_PASS) {
+        window.location.href = "admin-dashboard.html";
+      } else {
+        document.getElementById("error").innerText = "Invalid credentials";
+      }
+    }
+  </script>
+</body>
+</html>

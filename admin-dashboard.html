@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Admin Dashboard</title>
+  <style>
+    body { font-family: Arial; padding: 20px; background: #f5f5f5; }
+    button { margin: 5px; padding: 10px; }
+  </style>
+</head>
+<body>
+  <h2>Admin Dashboard</h2>
+
+  <div>
+    <button onclick="filterDrivers('All')">All</button>
+    <button onclick="filterDrivers('Pending')">Pending</button>
+    <button onclick="filterDrivers('Approved')">Approved</button>
+  </div>
+
+  <ul id="driverList"></ul>
+
+  <div id="summary" style="margin: 20px 0;"></div>
+
+  <script>
+    const drivers = JSON.parse(localStorage.getItem("drivers") || "[]");
+
+    function loadDrivers(status = "All") {
+      const list = drivers
+        .filter(d => status === "All" || d.status === status)
+        .map((d, i) => `
+          <li>
+            ${d.name} - ${d.vehicle} - ${d.status}
+            ${d.status === "Pending" ? `<button onclick="approveDriver(${i})">Approve</button>` : ""}
+          </li>
+        `).join("");
+      document.getElementById("driverList").innerHTML = list || "<li>No drivers found</li>";
+    }
+
+    function filterDrivers(status) {
+      loadDrivers(status);
+    }
+
+    function approveDriver(index) {
+      drivers[index].status = "Approved";
+      localStorage.setItem("drivers", JSON.stringify(drivers));
+      loadDrivers();
+    }
+
+    function showSummary() {
+      const rides = JSON.parse(localStorage.getItem("rides") || "[]");
+      const total = rides.length;
+      const earnings = rides.reduce((sum, r) => sum + parseFloat(r.fare), 0);
+
+      document.getElementById("summary").innerHTML = `
+        <h3>Summary</h3>
+        <p>Total Rides: ${total}</p>
+        <p>Total Earnings: ₹${earnings.toFixed(2)}</p>
+      `;
+    }
+
+    showSummary();
+    loadDrivers();
+  </script>
+</body>
+</html>

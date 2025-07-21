@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>My Rides</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <h2>My Ride History</h2>
+  <div id="history"></div>
+
+  <script>
+    const rides = JSON.parse(localStorage.getItem("rides") || "[]");
+    document.getElementById("history").innerHTML = rides.map(r =>
+      `<li>${r.time}: ${r.pickup} → ${r.drop} (${r.vehicle}, ${r.plate}) - ₹${r.fare}</li>`
+    ).join('');
+  </script>
+</body>
+</html>

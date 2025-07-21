@@ -1,0 +1,14 @@
+<script>
+  document.querySelector("form").onsubmit = function (e) {
+    e.preventDefault();
+    const name = document.querySelector("input[placeholder='Full Name']").value;
+    const vehicle = document.querySelector("input[placeholder='Vehicle Number']").value;
+
+    const drivers = JSON.parse(localStorage.getItem("drivers") || "[]");
+    drivers.push({ name, vehicle, status: "Pending" });
+    localStorage.setItem("drivers", JSON.stringify(drivers));
+
+    alert("Driver submitted for approval!");
+    e.target.reset();
+  }
+</script>
